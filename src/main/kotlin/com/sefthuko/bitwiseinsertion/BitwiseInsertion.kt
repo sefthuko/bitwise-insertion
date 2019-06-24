@@ -1,6 +1,6 @@
 package com.sefthuko.bitwiseinsertion
 
-@UseExperimental(kotlin.ExperimentalUnsignedTypes::class)
+@ExperimentalUnsignedTypes
 fun doBitwiseInsertion(N: UInt, M: UInt, i: Int, j: Int): UInt {
     // insert M into N such that M starts at bit j and ends at bit i.
     val numberOfBits = j - i + 1

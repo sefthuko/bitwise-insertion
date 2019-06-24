@@ -1,27 +1,52 @@
 package com.sefthuko.bitwiseinsertion
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import io.kotlintest.properties.Gen
+import io.kotlintest.properties.assertAll
+import io.kotlintest.shouldBe
+import io.kotlintest.specs.StringSpec
+import kotlin.math.absoluteValue
 
-@UseExperimental(kotlin.ExperimentalUnsignedTypes::class)
-class BitwiseInsertionTests {
-    @Test
-    fun shouldPassTheInterviewTest() {
-        Assertions.assertEquals(0b10001001100u,
-            doBitwiseInsertion(0b10000000000u, 0b10011u, 2, 6))
+@ExperimentalUnsignedTypes
+data class BitSpan(val M: UInt, val i: Int, val j: Int)
+
+@ExperimentalUnsignedTypes
+class GenBitSpan: Gen<BitSpan> {
+    override fun constants() = emptyList<BitSpan>()
+    override fun random() = generateSequence {
+        val i = Gen.int().random().first().absoluteValue % 32
+        val j = when (i) {
+            31 -> 31
+            else -> (Gen.int().random().first().absoluteValue % (31 - i)) + i
+        }
+        val M = GenUInt().random().first() shr (31 - (j - i))
+
+        BitSpan(M, i, j)
     }
+}
 
-    @Test
-    fun shouldClearTheLocationFirst() {
-        Assertions.assertEquals(0b10001001100u,
-            doBitwiseInsertion(0b10000110000u, 0b10011u, 2, 6))
+@ExperimentalUnsignedTypes
+class GenUInt: Gen<UInt> {
+    override fun constants() = emptyList<UInt>()
+    override fun random() = generateSequence {
+        Gen.long().random().first().toUInt()
     }
+}
 
-    @Test
-    fun shouldReplaceTheWholeThing() {
-        Assertions.assertEquals(0b11111111111111111111111111111111u,
-            doBitwiseInsertion(0u, 0b11111111111111111111111111111111u, 0, 31))
-        Assertions.assertEquals(0u,
-            doBitwiseInsertion(0b11111111111111111111111111111111u, 0u, 0, 31))
+@ExperimentalUnsignedTypes
+class BitwiseInsertionTests: StringSpec() {
+    init {
+        "Bitwise Insertion" {
+            assertAll(GenUInt(), GenBitSpan()) { N: UInt, b: BitSpan ->
+                b.run {
+                    val result = doBitwiseInsertion(N, M, i, j)
+
+                    val bitmask = (0u.inv() shr (31 - j + i)) shl i
+                    val invBitmask = bitmask.inv()
+
+                    (result and bitmask) shr i shouldBe M
+                    (result and invBitmask) shouldBe (N and invBitmask)
+                }
+            }
+        }
     }
 }
